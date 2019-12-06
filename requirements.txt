@@ -1,0 +1,4 @@
+pytest
+requests
+pytest-docker-compose
+pytest-sugar
