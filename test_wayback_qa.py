@@ -8,18 +8,18 @@
 # 5.fetch screenshots also
 # image compare with screenshots
 
+import hashlib
 import json
-from collections import Counter
+from collections import Counter, defaultdict
 
 import pytest
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
-counter_publico2017 = Counter()
-counter_jurisapp2019 = Counter()
-
 pytest_plugins = ["docker_compose"]
+
+counters = defaultdict()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -39,36 +39,36 @@ def launch_webrender(session_scoped_container_getter):
 
 @pytest.fixture(scope="session", autouse=True)
 def read_har_files():
-    with open('testfiles/publico.2017.har', mode='r') as fl:
-        js = json.load(fl)
-        for entrie in js['log']['entries']:
-            counter_publico2017[entrie['response']['status']] = counter_publico2017[entrie['response']['status']] + 1
+    with open('testfiles/test_urls_list.txt', mode='r') as fl:
+        for line in fl.readlines():
+            url = line.strip()
+            url_hash = hashlib.md5(url.encode('utf8')).hexdigest()
+            js = json.load('testfiles/hars/{}.har'.format(url_hash), mode='rb')
 
-    with open('testfiles/jurisapp.2019.ceger.har', mode='r') as fl:
-        js = json.load(fl)
-        for entrie in js['log']['entries']:
-            counter_jurisapp2019[entrie['response']['status']] = counter_jurisapp2019[entrie['response']['status']] + 1
+            counter = Counter()
+            for entrie in js['log']['entries']:
+                counter[entrie['response']['status']] = counter[entrie['response']['status']] + 1
+            counters[url_hash] = counter
 
 
 def fill_replay_counter(har_json):
-    replay_counter = Counter()
+    replay_counter_test = Counter()
     for entry in har_json['log']['entries']:
-        replay_counter[entry['response']['status']] = replay_counter[entry['response']['status']] + 1
-    return replay_counter
+        replay_counter_test[entry['response']['status']] = replay_counter_test[entry['response']['status']] + 1
+    return replay_counter_test
 
 
 def test_replay_status_codes(launch_webrender):
     webrender_url = launch_webrender
-    res = requests.get(url='{}/har'.format(webrender_url), params={
-        'url': 'https://preprod.arquivo.pt/noFrame/replay/20171204180222/https://www.publico.pt/'})
-    har_json = json.loads(res.content)
 
-    replay_counter = fill_replay_counter(har_json)
-    assert replay_counter[200] >= counter_publico2017[200]
+    with open('testfiles/test_urls_list.txt', mode='r') as fl:
+        for line in fl.readlines():
+            url = line.strip()
+            url_hash = hashlib.md5(url.encode('utf8')).hexdigest()
 
-    res = requests.get(url='{}/har'.format(webrender_url), params={
-        'url': 'https://preprod.arquivo.pt/noFrame/replay/20190426132340/https://www.jurisapp.gov.pt'})
-    har_json = json.loads(res.content)
+            res = requests.get(url='{}/har'.format(webrender_url), params={
+                'url': 'https://preprod.arquivo.pt/noFrame/replay/20171204180222/https://www.publico.pt/'})
+            har_json = json.loads(res.content)
 
-    replay_counter = fill_replay_counter(har_json)
-    assert replay_counter[200] >= counter_jurisapp2019[200]
+            replay_counter = fill_replay_counter(har_json)
+            assert replay_counter[200] >= counters[url_hash][200]
