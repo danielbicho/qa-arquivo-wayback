@@ -1,9 +1,4 @@
-# 1. list of replay urls to validate
-# 2. get har from replay rendering
-# 3. analyze har file
-# number of 200s rendered?
 # live web leaks? logic equal to what we have done before
-
 # 4. compare against previous generated results
 # 5.fetch screenshots also
 # image compare with screenshots
@@ -43,7 +38,8 @@ def read_har_files():
         for line in fl.readlines():
             url = line.strip()
             url_hash = hashlib.md5(url.encode('utf8')).hexdigest()
-            js = json.load('testfiles/hars/{}.har'.format(url_hash), mode='rb')
+            fp = open('testfiles/hars/{}.har'.format(url_hash))
+            js = json.load(fp)
 
             counter = Counter()
             for entrie in js['log']['entries']:
@@ -64,11 +60,14 @@ def test_replay_status_codes(launch_webrender):
     with open('testfiles/test_urls_list.txt', mode='r') as fl:
         for line in fl.readlines():
             url = line.strip()
+            print("Testing replay for URL: {} ....".format(url))
             url_hash = hashlib.md5(url.encode('utf8')).hexdigest()
 
             res = requests.get(url='{}/har'.format(webrender_url), params={
-                'url': 'https://preprod.arquivo.pt/noFrame/replay/20171204180222/https://www.publico.pt/'})
+                'url': url})
             har_json = json.loads(res.content)
 
             replay_counter = fill_replay_counter(har_json)
+            print(replay_counter)
+            print(counters[url_hash])
             assert replay_counter[200] >= counters[url_hash][200]
