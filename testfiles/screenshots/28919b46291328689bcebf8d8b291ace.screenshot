@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Error: Protocol error (Target.activateTarget): Target closed.<br> &nbsp; &nbsp;at Promise (/webrender/node_modules/puppeteer/lib/Connection.js:183:56)<br> &nbsp; &nbsp;at new Promise (&lt;anonymous&gt;)<br> &nbsp; &nbsp;at CDPSession.send (/webrender/node_modules/puppeteer/lib/Connection.js:182:12)<br> &nbsp; &nbsp;at Page._screenshotTask (/webrender/node_modules/puppeteer/lib/Page.js:929:24)<br> &nbsp;-- ASYNC --<br> &nbsp; &nbsp;at Page.&lt;anonymous&gt; (/webrender/node_modules/puppeteer/lib/helper.js:111:15)<br> &nbsp; &nbsp;at renderScreenshot (/webrender/index.js:22:29)</pre>
+</body>
+</html>
